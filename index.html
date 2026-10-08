@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ObraGest — Gestión de Proyectos de Obra Pública</title>
+<meta name="description" content="Aplicación web para gestionar proyectos de obra pública en equipo: tareas, subproyectos, tiempos y avances.">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>">
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <span class="brand-icon">🏗️</span>
+      <div><strong>ObraGest</strong><small>Obra Pública</small></div>
+    </div>
+    <nav class="nav" id="mainNav">
+      <button data-view="dashboard" class="active">📊 Panel</button>
+      <button data-view="proyectos">🏢 Proyectos</button>
+      <button data-view="subproyectos">🧩 Subproyectos</button>
+      <button data-view="tareas">✅ Tareas <span class="badge" id="badgeTareas"></span></button>
+      <button data-view="equipo">👷 Equipo</button>
+      <button data-view="tiempos">⏱️ Tiempos</button>
+      <button data-view="avances">📈 Avances</button>
+    </nav>
+    <div class="sidebar-foot">
+      <button id="btnExport" title="Exportar JSON">💾 Exportar</button>
+      <button id="btnImport" title="Importar JSON">📥 Importar</button>
+      <input type="file" id="fileImport" accept=".json" hidden>
+      <button id="btnReset" class="danger-ghost" title="Restaurar datos de ejemplo">↺ Datos ejemplo</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <div class="search-wrap">
+        <input id="globalSearch" type="search" placeholder="Buscar proyecto, tarea, miembro… ( / )">
+      </div>
+      <div class="topbar-actions">
+        <select id="filterProyectoGlobal" title="Filtrar por proyecto"><option value="">Todos los proyectos</option></select>
+        <button class="btn primary" id="btnQuickTask">+ Nueva tarea</button>
+      </div>
+    </header>
+
+    <!-- DASHBOARD -->
+    <section class="view active" id="view-dashboard">
+      <div class="view-head">
+        <h1>Panel de control</h1>
+        <p>Visión global de la obra pública en curso.</p>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Avance por proyecto</h3>
+          <div id="avanceProyectos"></div>
+        </div>
+        <div class="card">
+          <h3>Próximos vencimientos (14 días)</h3>
+          <div id="vencimientos"></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Carga de trabajo por miembro</h3>
+          <canvas id="chartCarga" height="220"></canvas>
+        </div>
+        <div class="card">
+          <h3>Estado de tareas</h3>
+          <canvas id="chartEstados" height="220"></canvas>
+          <div class="legend" id="legendEstados"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Bitácora reciente</h3>
+        <div id="bitacoraReciente" class="timeline"></div>
+      </div>
+    </section>
+
+    <!-- PROYECTOS -->
+    <section class="view" id="view-proyectos">
+      <div class="view-head row">
+        <div><h1>Proyectos</h1><p>Expedientes de obra pública.</p></div>
+        <button class="btn primary" data-add="proyecto">+ Nuevo proyecto</button>
+      </div>
+      <div class="cards-grid" id="listaProyectos"></div>
+    </section>
+
+    <!-- SUBPROYECTOS -->
+    <section class="view" id="view-subproyectos">
+      <div class="view-head row">
+        <div><h1>Subproyectos</h1><p>Fracciones adjudicables a miembros del equipo.</p></div>
+        <button class="btn primary" data-add="subproyecto">+ Nuevo subproyecto</button>
+      </div>
+      <div class="table-wrap"><table class="table" id="tablaSubproyectos"></table></div>
+    </section>
+
+    <!-- TAREAS -->
+    <section class="view" id="view-tareas">
+      <div class="view-head row">
+        <div><h1>Tareas</h1><p>Reparto, prioridades y tablero Kanban.</p></div>
+        <div class="row gap">
+          <select id="filterEstado"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="en_curso">En curso</option><option value="en_revision">En revisión</option><option value="completada">Completada</option></select>
+          <select id="filterMiembro"><option value="">Todos los miembros</option></select>
+          <button class="btn primary" data-add="tarea">+ Nueva tarea</button>
+        </div>
+      </div>
+      <div class="kanban" id="kanban"></div>
+    </section>
+
+    <!-- EQUIPO -->
+    <section class="view" id="view-equipo">
+      <div class="view-head row">
+        <div><h1>Equipo</h1><p>Miembros, roles y especialidades.</p></div>
+        <button class="btn primary" data-add="miembro">+ Nuevo miembro</button>
+      </div>
+      <div class="cards-grid" id="listaEquipo"></div>
+    </section>
+
+    <!-- TIEMPOS -->
+    <section class="view" id="view-tiempos">
+      <div class="view-head row">
+        <div><h1>Tiempos</h1><p>Planificación, plazos y registro de horas.</p></div>
+        <div class="row gap">
+          <button class="btn" data-add="registro">+ Registrar horas</button>
+          <button class="btn primary" data-add="tarea">+ Nueva tarea</button>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><h3>Horas estimadas vs reales (por proyecto)</h3><canvas id="chartHoras" height="240"></canvas></div>
+        <div class="card"><h3>Cronograma (Gantt simplificado)</h3><div id="gantt"></div></div>
+      </div>
+      <div class="card"><h3>Registro de horas</h3><div class="table-wrap"><table class="table" id="tablaRegistros"></table></div></div>
+    </section>
+
+    <!-- AVANCES -->
+    <section class="view" id="view-avances">
+      <div class="view-head row">
+        <div><h1>Avances e informes</h1><p>Control de progreso y bitácora de obra.</p></div>
+        <div class="row gap">
+          <button class="btn" id="btnCSV">⬇ Informe CSV</button>
+          <button class="btn primary" data-add="bitacora">+ Anotar bitácora</button>
+        </div>
+      </div>
+      <div class="card"><h3>Progreso detallado</h3><div id="avanceDetallado"></div></div>
+      <div class="card"><h3>Bitácora de obra</h3><div id="bitacoraFull" class="timeline"></div></div>
+    </section>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal">
+    <h2 id="modalTitle"></h2>
+    <form id="modalForm"></form>
+    <div class="modal-actions">
+      <button class="btn" id="modalCancel" type="button">Cancelar</button>
+      <button class="btn primary" id="modalSave" type="button">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
